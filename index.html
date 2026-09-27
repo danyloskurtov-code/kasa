@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Касса PLN</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Касса">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#EEF1EC">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#EEF1EC; --card:#FFFFFF; --ink:#1E2A2C; --muted:#66736F; --line:#D6DDD6;
+  --pos:#1F7A4D; --neg:#B3261E; --accent:#1E2A2C; --field:#F6F8F5;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141A19; --card:#1C2422; --ink:#E7EEEA; --muted:#93A19C; --line:#2C3835;
+    --pos:#5CC98E; --neg:#FF8A80; --accent:#E7EEEA; --field:#232D2B;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141A19; --card:#1C2422; --ink:#E7EEEA; --muted:#93A19C; --line:#2C3835;
+  --pos:#5CC98E; --neg:#FF8A80; --accent:#E7EEEA; --field:#232D2B;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0;min-height:100%;background:var(--bg);color:var(--ink);
+  font-family:"Onest",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;
+}
+main{max-width:560px;margin:0 auto;padding:20px 16px 190px}
+h1{font-size:1.35rem;font-weight:700;margin:4px 4px 2px;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:.9rem;margin:0 4px 18px}
+section{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:6px 14px;margin-bottom:14px}
+.sec-head{display:flex;justify-content:space-between;align-items:baseline;padding:10px 2px 6px}
+.sec-head h2{font-size:1rem;font-weight:600;margin:0}
+.sec-head span{color:var(--muted);font-size:.9rem}
+.row{display:grid;grid-template-columns:78px 1fr auto;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.row:first-of-type{border-top:0}
+.den{display:flex;align-items:center;justify-content:center;height:38px;border-radius:7px;font-weight:700;font-size:.95rem;color:#fff}
+.den.coin{width:42px;height:42px;border-radius:50%;margin:0 auto;font-size:.8rem;box-shadow:inset 0 0 0 3px rgba(255,255,255,.35)}
+.den.silver{color:#2a2a2a}
+.ctl{display:flex;align-items:center;gap:6px}
+.ctl button{
+  width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--field);
+  color:var(--ink);font-size:1.25rem;font-family:inherit;cursor:pointer;flex:none;line-height:1;
+}
+.ctl button:active{transform:scale(.94)}
+.ctl input{
+  width:100%;min-width:0;height:38px;text-align:center;border:1px solid var(--line);border-radius:10px;
+  background:var(--field);color:var(--ink);font:600 1.05rem "Onest",system-ui,sans-serif;font-variant-numeric:tabular-nums;
+}
+.sum{min-width:88px;text-align:right;font-weight:600;font-size:.95rem}
+.sum.zero{color:var(--muted);font-weight:400}
+button:focus-visible,input:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.expected{display:grid;grid-template-columns:1fr 150px;gap:10px;align-items:center;padding:12px 2px}
+.expected label{font-weight:600}
+.expected small{display:block;color:var(--muted);font-weight:400;font-size:.82rem}
+.expected input{height:42px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--ink);
+  font:600 1.05rem "Onest",system-ui,sans-serif;text-align:right;padding:0 10px;width:100%}
+.actions{display:flex;gap:10px;margin-top:4px}
+.actions button{flex:1;height:46px;border-radius:12px;font:600 .95rem "Onest",system-ui,sans-serif;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.actions .primary{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+
+/* till display */
+.till{
+  position:fixed;left:0;right:0;bottom:0;z-index:5;
+  padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));
+  background:var(--ink);color:var(--bg);
+}
+.till-in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:end}
+.till .lbl{font-size:.85rem;opacity:.7}
+.till .total{font-size:2.1rem;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.till .split{text-align:right;font-size:.82rem;opacity:.75;line-height:1.5}
+.till .diff{grid-column:1/-1;font-size:.95rem;font-weight:600;margin-top:4px;display:none}
+.till .diff.show{display:block}
+.toast{position:fixed;left:50%;bottom:150px;transform:translateX(-50%);background:var(--card);color:var(--ink);
+  border:1px solid var(--line);padding:10px 16px;border-radius:12px;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}.ctl button:active{transform:none}}
+@media (max-width:380px){.row{grid-template-columns:64px 1fr auto;gap:8px}.sum{min-width:74px;font-size:.88rem}.ctl button{width:34px;height:34px}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Подсчёт кассы</h1>
+  <p class="sub">Введите количество купюр и монет каждого номинала.</p>
+
+  <section aria-labelledby="h-notes">
+    <div class="sec-head"><h2 id="h-notes">Банкноты</h2><span id="notesSum">0,00 zł</span></div>
+    <div id="notes"></div>
+  </section>
+
+  <section aria-labelledby="h-coins">
+    <div class="sec-head"><h2 id="h-coins">Монеты</h2><span id="coinsSum">0,00 zł</span></div>
+    <div id="coins"></div>
+  </section>
+
+  <section>
+    <div class="expected">
+      <label for="expected">Должно быть в кассе<small>по отчёту, необязательно</small></label>
+      <input id="expected" inputmode="decimal" placeholder="0,00" autocomplete="off">
+    </div>
+  </section>
+
+  <div class="actions">
+    <button id="copyBtn" class="primary">Копировать итог</button>
+    <button id="resetBtn">Обнулить</button>
+  </div>
+</main>
+
+<div class="till" aria-live="polite">
+  <div class="till-in">
+    <div>
+      <div class="lbl">Итого в кассе</div>
+      <div class="total" id="total">0,00 zł</div>
+    </div>
+    <div class="split"><span id="pcsNotes">0</span> купюр<br><span id="pcsCoins">0</span> монет</div>
+    <div class="diff" id="diff"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// values in grosze to avoid float errors
+const NOTES=[
+  {v:50000,l:"500",c:"#7A5A3A"},
+  {v:20000,l:"200",c:"#B58A2A"},
+  {v:10000,l:"100",c:"#5E7A3A"},
+  {v:5000, l:"50", c:"#2F5C9E"},
+  {v:2000, l:"20", c:"#6B4C8C"},
+  {v:1000, l:"10", c:"#8C5A3C"}
+];
+const GOLD="radial-gradient(circle at 35% 30%,#F3D98A,#C79A2E)";
+const SILVER="radial-gradient(circle at 35% 30%,#F4F4F2,#AEB2B0)";
+const BI_5="radial-gradient(circle,#E4C065 0 45%,#C8CBC8 47%)";
+const BI_2="radial-gradient(circle,#C8CBC8 0 45%,#E4C065 47%)";
+const COPPER="radial-gradient(circle at 35% 30%,#E6A77C,#A8603A)";
+const COINS=[
+  {v:500,l:"5 zł",c:BI_5,s:1},
+  {v:200,l:"2 zł",c:BI_2,s:1},
+  {v:100,l:"1 zł",c:SILVER,s:1},
+  {v:50, l:"50 gr",c:SILVER,s:1},
+  {v:20, l:"20 gr",c:SILVER,s:1},
+  {v:10, l:"10 gr",c:SILVER,s:1},
+  {v:5,  l:"5 gr",c:GOLD,s:1},
+  {v:2,  l:"2 gr",c:GOLD,s:1},
+  {v:1,  l:"1 gr",c:COPPER,s:1}
+];
+const KEY="pln-kasa-v1";
+let counts={}; let expected="";
+try{const s=JSON.parse(localStorage.getItem(KEY)||"null"); if(s){counts=s.counts||{}; expected=s.expected||"";}}catch(e){}
+
+const fmt=g=>{
+  const neg=g<0; g=Math.abs(g);
+  const zl=Math.floor(g/100).toString().replace(/\B(?=(\d{3})+(?!\d))/g,"\u00A0");
+  return (neg?"−":"")+zl+","+String(g%100).padStart(2,"0")+" zł";
+};
+
+function buildRow(d,isCoin,host){
+  const row=document.createElement("div"); row.className="row";
+  const den=document.createElement("div");
+  den.className="den"+(isCoin?" coin silver":"");
+  den.style.background=d.c;
+  den.textContent=isCoin?d.l.replace(" ", "\u00A0"):d.l+" zł";
+  const ctl=document.createElement("div"); ctl.className="ctl";
+  const minus=document.createElement("button"); minus.textContent="−"; minus.setAttribute("aria-label","Меньше: "+(isCoin?d.l:d.l+" zł"));
+  const inp=document.createElement("input"); inp.inputMode="numeric"; inp.pattern="[0-9]*"; inp.placeholder="0";
+  inp.setAttribute("aria-label","Количество: "+(isCoin?d.l:d.l+" zł"));
+  const plus=document.createElement("button"); plus.textContent="+"; plus.setAttribute("aria-label","Больше: "+(isCoin?d.l:d.l+" zł"));
+  const sum=document.createElement("div"); sum.className="sum zero";
+  ctl.append(minus,inp,plus); row.append(den,ctl,sum); host.append(row);
+
+  const set=n=>{n=Math.max(0,Math.min(99999,n|0)); counts[d.v]=n; inp.value=n?String(n):""; update();};
+  inp.value=counts[d.v]?String(counts[d.v]):"";
+  inp.addEventListener("input",()=>{const n=parseInt(inp.value.replace(/\D/g,""),10)||0; counts[d.v]=Math.min(99999,n); update();});
+  inp.addEventListener("blur",()=>{inp.value=counts[d.v]?String(counts[d.v]):"";});
+  inp.addEventListener("focus",()=>inp.select());
+  minus.onclick=()=>set((counts[d.v]||0)-1);
+  plus.onclick=()=>set((counts[d.v]||0)+1);
+  d.sumEl=sum;
+}
+NOTES.forEach(d=>buildRow(d,false,document.getElementById("notes")));
+COINS.forEach(d=>buildRow(d,true,document.getElementById("coins")));
+
+const expEl=document.getElementById("expected");
+expEl.value=expected;
+expEl.addEventListener("input",()=>{expected=expEl.value; update();});
+
+function parseMoney(str){
+  const t=String(str).replace(/\s|\u00A0/g,"").replace(",",".");
+  if(!t||isNaN(Number(t))) return null;
+  return Math.round(Number(t)*100);
+}
+
+function totals(){
+  let n=0,c=0,pn=0,pc=0;
+  NOTES.forEach(d=>{const k=counts[d.v]||0; n+=k*d.v; pn+=k;});
+  COINS.forEach(d=>{const k=counts[d.v]||0; c+=k*d.v; pc+=k;});
+  return {n,c,pn,pc,t:n+c};
+}
+
+function update(){
+  [...NOTES,...COINS].forEach(d=>{const s=(counts[d.v]||0)*d.v; d.sumEl.textContent=fmt(s); d.sumEl.classList.toggle("zero",!s);});
+  const T=totals();
+  document.getElementById("notesSum").textContent=fmt(T.n);
+  document.getElementById("coinsSum").textContent=fmt(T.c);
+  document.getElementById("total").textContent=fmt(T.t);
+  document.getElementById("pcsNotes").textContent=T.pn;
+  document.getElementById("pcsCoins").textContent=T.pc;
+  const diffEl=document.getElementById("diff");
+  const e=parseMoney(expected);
+  if(e===null){diffEl.classList.remove("show");}
+  else{
+    const d=T.t-e; diffEl.classList.add("show");
+    diffEl.textContent= d===0 ? "Сходится с отчётом ✓" : (d>0?"Излишек ":"Недостача ")+fmt(Math.abs(d));
+    diffEl.style.color= d===0?"#7FE0A8":(d>0?"#FFD27A":"#FF9A90");
+  }
+  try{localStorage.setItem(KEY,JSON.stringify({counts,expected}));}catch(err){}
+}
+
+function toast(msg){const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),1600);}
+
+document.getElementById("resetBtn").onclick=()=>{
+  if(!confirm("Обнулить все количества?")) return;
+  counts={}; expected=""; expEl.value="";
+  document.querySelectorAll(".ctl input").forEach(i=>i.value="");
+  update();
+};
+
+document.getElementById("copyBtn").onclick=async()=>{
+  const T=totals(); const lines=["Касса PLN — "+new Date().toLocaleString("ru-RU")];
+  NOTES.forEach(d=>{const k=counts[d.v]||0; if(k) lines.push(d.l+" zł × "+k+" = "+fmt(k*d.v));});
+  COINS.forEach(d=>{const k=counts[d.v]||0; if(k) lines.push(d.l+" × "+k+" = "+fmt(k*d.v));});
+  lines.push("","Банкноты: "+fmt(T.n),"Монеты: "+fmt(T.c),"ИТОГО: "+fmt(T.t));
+  const e=parseMoney(expected);
+  if(e!==null){const d=T.t-e; lines.push("По отчёту: "+fmt(e), d===0?"Сходится":(d>0?"Излишек: ":"Недостача: ")+fmt(Math.abs(d)));}
+  const text=lines.join("\n");
+  try{await navigator.clipboard.writeText(text); toast("Итог скопирован");}
+  catch(e){
+    const ta=document.createElement("textarea"); ta.value=text; document.body.append(ta); ta.select();
+    try{document.execCommand("copy"); toast("Итог скопирован");}catch(_){toast("Не удалось скопировать");}
+    ta.remove();
+  }
+};
+update();
+</script>
+</body>
+</html>
